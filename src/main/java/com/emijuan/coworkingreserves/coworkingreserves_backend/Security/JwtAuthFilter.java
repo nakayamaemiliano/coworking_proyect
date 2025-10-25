@@ -16,58 +16,59 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthFilter  extends OncePerRequestFilter {
-    private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
+
+    public JwtAuthFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        final String path = request.getServletPath();
+
+        // ⛔ Rutas públicas: saltamos el filtro JWT
+        if (path.startsWith("/api/auth/forgot-password") ||
+                path.startsWith("/api/auth/reset-password") ||
+                path.startsWith("/api/auth/login") ||
+                path.startsWith("/api/auth/register")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
-        // 🔍 Si no hay header o no empieza con "Bearer", seguimos el flujo normal
+        // 🔍 Si no hay token, seguir sin validar JWT
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ✂️ Extraemos el token (quitamos "Bearer ")
         jwt = authHeader.substring(7);
-
-        // 📧 Extraemos el email (subject) del token
         userEmail = jwtUtil.getUserEmailFromToken(jwt);
 
-        // 🔐 Validamos que el usuario no esté autenticado todavía
+        // ✅ Validar token y autenticar
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            // Buscamos el usuario en la base de datos
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-            // ✅ Validamos el token contra los datos del usuario
             if (jwtUtil.validateToken(jwt)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-
-                // Agregamos detalles de la request
+                        userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Guardamos la autenticación en el contexto de Spring Security
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 
-        // ⏭️ Continuamos con la cadena de filtros
         filterChain.doFilter(request, response);
     }
+
 
 }
 

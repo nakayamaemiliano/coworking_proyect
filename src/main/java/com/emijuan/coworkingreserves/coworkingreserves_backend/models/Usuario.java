@@ -6,10 +6,12 @@ import jakarta.persistence.*;
 @Table(schema = "Usuarios")
 public class Usuario {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, unique = true, length = 100)
+
+    @Column(nullable = false, unique = false, length = 100)
     private String nombre;
+
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
@@ -18,9 +20,7 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     private Rol rol;
 
-    public Usuario() {
-
-    }
+    public Usuario() {}
 
     public Usuario(String nombre, String email, String password, Rol rol) {
         this.nombre = nombre;
@@ -70,5 +70,13 @@ public class Usuario {
                 ", password='" + password + '\'' +
                 ", rol=" + rol +
                 '}';
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

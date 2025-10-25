@@ -2,6 +2,7 @@ package com.emijuan.coworkingreserves.coworkingreserves_backend.Security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -30,8 +31,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints públicos
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/usuarios/**").permitAll() // de momento abierto
-                        // Todo lo demás requiere autenticación
+                        .requestMatchers("/api/espacios/disponibles").permitAll()
+
+                        // Espacios: solo usuarios autenticados pueden crear/listar
+                        .requestMatchers(HttpMethod.GET, "/api/espacios/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/espacios/**").authenticated()
+
+                        // Reservas: requieren autenticación
+                        .requestMatchers("/api/reservas/**").authenticated()
+
+                        // Todo lo demás, protegido
                         .anyRequest().authenticated()
                 )
                 // Agregamos el filtro JWT antes del filtro de autenticación por usuario/contraseña
