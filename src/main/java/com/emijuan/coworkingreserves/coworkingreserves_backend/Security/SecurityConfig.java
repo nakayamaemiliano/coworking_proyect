@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -26,24 +28,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(csrf -> csrf.disable()) // desactivamos CSRF para APIs REST
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // sin sesión
+                .cors(cors -> cors.configurationSource(request -> {
+                    var config = new org.springframework.web.cors.CorsConfiguration();
+                    config.setAllowedOrigins(List.of("http://localhost:3000"));
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowCredentials(true);
+                    return config;
+                }))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/espacios/disponibles").permitAll()
-
-                        // Espacios: solo usuarios autenticados pueden crear/listar
-                        .requestMatchers(HttpMethod.GET, "/api/espacios/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/espacios/**").authenticated()
-
-                        // Reservas: requieren autenticación
+                        .requestMatchers("/api/espacios/**").authenticated()
                         .requestMatchers("/api/reservas/**").authenticated()
-
-                        // Todo lo demás, protegido
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
-                // Agregamos el filtro JWT antes del filtro de autenticación por usuario/contraseña
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
