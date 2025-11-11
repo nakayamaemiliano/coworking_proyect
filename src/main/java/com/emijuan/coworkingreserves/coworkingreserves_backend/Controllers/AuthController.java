@@ -65,8 +65,14 @@ public class AuthController {
                 );
 
                 // 4️⃣ Retornar token + info del usuario
-                LoginResponse response = new LoginResponse(token, userFromDb.getEmail(), userFromDb.getRol().name());
+                LoginResponse response = new LoginResponse(
+                        token,
+                        userFromDb.getEmail(),
+                        userFromDb.getRol().name(),
+                        userFromDb.getId() // <-- agregamos el id aquí
+                );
                 return ResponseEntity.ok(response);
+
             } else {
                 return ResponseEntity.status(401).body("❌ Credenciales inválidas");
             }
