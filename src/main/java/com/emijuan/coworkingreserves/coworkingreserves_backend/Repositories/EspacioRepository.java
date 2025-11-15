@@ -27,3 +27,4 @@ public interface EspacioRepository extends JpaRepository<Espacio, Long> {
             @Param("horaFin") LocalTime horaFin
     );
 }
+
