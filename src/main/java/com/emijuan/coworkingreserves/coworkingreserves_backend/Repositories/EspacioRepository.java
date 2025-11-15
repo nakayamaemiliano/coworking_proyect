@@ -9,7 +9,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-public interface EspacioRepository extends JpaRepository<Espacio,Long> {
+public interface EspacioRepository extends JpaRepository<Espacio, Long> {
+
     @Query("""
         SELECT e FROM Espacio e
         WHERE e.disponible = true

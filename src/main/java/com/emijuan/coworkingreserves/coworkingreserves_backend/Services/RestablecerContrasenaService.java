@@ -15,41 +15,39 @@ import java.util.UUID;
 
 @Service
 public class RestablecerContrasenaService {
+
     private final UsuarioRepository usuarioRepository;
     private final TokenRestablecerContrasenaRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
-    public RestablecerContrasenaService(UsuarioRepository usuarioRepository,
-                                        TokenRestablecerContrasenaRepository tokenRepository,
-                                        PasswordEncoder passwordEncoder,
-                                        EmailService emailService) {
+    public RestablecerContrasenaService(
+            UsuarioRepository usuarioRepository,
+            TokenRestablecerContrasenaRepository tokenRepository,
+            PasswordEncoder passwordEncoder,
+            EmailService emailService
+    ) {
         this.usuarioRepository = usuarioRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
     }
 
-    // 📨 Generar token
     @Transactional
     public String generarToken(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("No existe un usuario con ese email."));
 
-        // Eliminar tokens antiguos
         tokenRepository.deleteAllByUsuario(usuario);
 
-        // Crear token nuevo
         TokenRestablecerContrasena token = new TokenRestablecerContrasena();
         token.setUsuario(usuario);
         token.setCodigoVerificacion(UUID.randomUUID().toString());
         token.setFechaExpiracion(LocalDateTime.now().plusMinutes(15));
         token.setUsado(false);
         token.setFechaCreacion(LocalDateTime.now());
-
         tokenRepository.save(token);
 
-        // Intentar enviar el correo
         try {
             String asunto = "Recuperación de contraseña - Coworking Reserves";
             String cuerpo = """
@@ -65,32 +63,22 @@ public class RestablecerContrasenaService {
             emailService.enviarCorreo(usuario.getEmail(), asunto, cuerpo);
         } catch (MailException e) {
             System.err.println("⚠️ No se pudo enviar el correo: " + e.getMessage());
-            // Aún devolvemos 200, porque el token fue generado correctamente
         }
 
         System.out.println("📧 Código de verificación para " + email + ": " + token.getCodigoVerificacion());
-
-        return "📩 Se generó el token de recuperación. Revisa tu correo (o consola en modo test).";
+        return "📩 Se generó el token de recuperación. Revisa tu correo.";
     }
 
-    // 🔐 Restablecer contraseña
     @Transactional
     public String restablecerContrasena(String codigo, String nuevaContrasena) {
         Optional<TokenRestablecerContrasena> tokenOpt = tokenRepository.findByCodigoVerificacion(codigo);
 
-        if (tokenOpt.isEmpty()) {
-            throw new RuntimeException("Código inválido.");
-        }
+        if (tokenOpt.isEmpty()) throw new RuntimeException("Código inválido.");
 
         TokenRestablecerContrasena token = tokenOpt.get();
 
-        if (token.isUsado()) {
-            throw new RuntimeException("El token ya fue utilizado.");
-        }
-
-        if (token.getFechaExpiracion().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("El token ha expirado.");
-        }
+        if (token.isUsado()) throw new RuntimeException("El token ya fue utilizado.");
+        if (token.getFechaExpiracion().isBefore(LocalDateTime.now())) throw new RuntimeException("El token ha expirado.");
 
         Usuario usuario = token.getUsuario();
         usuario.setPassword(passwordEncoder.encode(nuevaContrasena));
@@ -101,6 +89,4 @@ public class RestablecerContrasenaService {
 
         return "Contraseña actualizada correctamente ✅";
     }
-
-
 }

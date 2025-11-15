@@ -12,12 +12,12 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Repository
-public interface ReservaRepository extends JpaRepository<Reserva,Long> {
+public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     List<Reserva> findByUsuario(Usuario usuario);
 
     @Query("""
-        SELECT r FROM Reserva r 
+        SELECT r FROM Reserva r
         WHERE r.espacio.id = :espacioId
         AND r.fechaReserva = :fecha
         AND (r.horaInicio < :horaFin AND r.horaFin > :horaInicio)
@@ -28,5 +28,4 @@ public interface ReservaRepository extends JpaRepository<Reserva,Long> {
             @Param("horaInicio") LocalTime horaInicio,
             @Param("horaFin") LocalTime horaFin
     );
-
 }
