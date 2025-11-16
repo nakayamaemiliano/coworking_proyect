@@ -3,13 +3,14 @@ package com.emijuan.coworkingreserves.coworkingreserves_backend.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(schema = "Usuarios")
+@Table(name = "usuario")
 public class Usuario {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String nombre;
 
     @Column(nullable = false, unique = true, length = 100)
