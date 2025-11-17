@@ -13,7 +13,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") // aplica a todos los endpoints
-                        .allowedOrigins("http://localhost:3000") // tu frontend React
+                        .allowedOrigins("https://coworking-front.onrender.com") // tu frontend React
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
